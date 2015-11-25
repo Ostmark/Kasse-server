@@ -1,6 +1,7 @@
 redis = require "../../config/redis"
 _ = require "lodash"
 uuid = require "uuid"
+err = require "error-registry"
 
 module.exports =
   balance_error: Symbol "balance"
@@ -28,10 +29,9 @@ module.exports =
 # Then reduce to cost by summing `cost * amount`
             (acc, [[drink, amount], [_2, cost]]) -> acc + (parseInt cost) * amount,
             0
-          console.log cost
 # Check if the user can afford the order
           if (parseInt balance) <  cost
-            {success: false, error: "balance #{balance} not sufficient (price is #{cost})"}
+            {success: false, error: err.get "balance"}
           else
             uuid_ret = uuid.v4()
             transaction =
@@ -48,8 +48,7 @@ module.exports =
 # Push a transaction into the transaction list
               .lpush "transaction", transaction
 # Subtract cost from the users balance
-              .hincrby "users:#{ user }",
-                "balance", -cost
+              .hincrby "users:#{ user }", "balance", -cost
 # Save transaction for reversals
               .set "uuid:#{ uuid_ret }", transaction
 # Transaction can be reversed for an hour
@@ -103,6 +102,14 @@ module.exports =
           .exec()
         .then () ->
           {success: true}
-
+  pull: (n) ->
+    pipeline = redis.pipeline()
+    for i in [0..n]
+      pipeline.rpop "transactions"
+    pipeline.exec().then (res_list) ->
+      res_list = res_list
+        .filter (res) -> res[1]?
+        .map ([_, res]) -> JSON.parse res
+      {success: true, n: res_list.length, result: res_list}
 
 

@@ -1,25 +1,61 @@
 redis = require "../../config/redis.coffee"
 bcrypt = require "bcrypt"
 bluebird = require "bluebird"
+err = require "error-registry"
 
-UserExistsException = ->
-  @prototype = Exception.prototype
-  @message = "user already exist"
-UserNotExistsException = ->
+auth_barcode = (barcode) ->
+  redis
+    .pipeline()
+# check if the barcode exists
+    .exists "userbarcode:#{user.barcode}"
+# get the name for the barcode
+    .get "userbarcode:#{user.barcode}"
+    .exec()
+    .then ([[_1, exists], [_2, username]]) ->
+# if the barcode exists, check if role is set for user
+      if exists
+        redis
+          .hmget "users:#{username}", role ? "invalid_role"
+          .then () ->
+# return success
+            success: true
+            role: role?
+            username: username
+# return failure
+      else
+        success: false
+
+auth_password = (user, password) ->
+  redis
+# get the password hash, and try to get the role
+    .hmget "users:#{user}", "password", role ? "invalid_role"
+    .then (result) ->
+      if (bluebird.promisify bcrypt.compare) password, result[0]
+        success: true
+        role: has_role?[0]?
+        username: user
+
+
 
 module.exports =
-  make: (name, fullname, password) ->
-    redis.exists "name"
+  make: (name, fullname, password, barcode) ->
+    redis.exists "users:#{name}"
       .then (exists) ->
         if exists
-          throw new UserExistsException()
+            {sucess: false, error: err.get "exists"}
         else
           (bluebird.promisify bcrypt.hash) password, 8
       .then (hash) ->
-        redis.hmset "users:#{name}",
-          fullname: fullname,
-          balance:  0
-          password: hash
+        redis
+          .pipeline()
+          .hmset "users:#{name}",
+            fullname: fullname
+            balance:  0
+            password: hash
+          .set "userbarcode:#{barcode}", name
+          .exec()
+          .then (res) ->
+            {success: true}
   get: (name) ->
     redis
       .pipeline()
@@ -37,21 +73,27 @@ module.exports =
       .del "users:#{ name }"
       .then (reply) ->
         reply == 1
-  auth_password: (user, password, role) ->
-    redis
-      .hmget "users:#{user}", "password", role
-      .then (result) ->
-        [hash, has_role] = result
-        if role? and not has_role?
-          false
-        else if not hash?
-          throw new UserNotExistsException()
-        else
-          (bluebird.promisify bcrypt.compare) password, hash
+
+# Authorizes `user`. Optionally checks if user has role.
+  auth: (user, role) ->
+    promise = if user.barcode?
+      auth_barcode barcode
+    else
+      auth_password user.name, user.password
+    promise .then ({success, has_role, username}) ->
+      if role? and not has_role
+        success: false
+      else
+        {success, username}
+
   roles: (user) ->
-    set: (authority, role) ->
+    set: (role) ->
       redis
-        .hmset "users:#{user.name}", "#{role}":authority
+        .hset "users:#{user}", "#{role}", "true"
+        .then ->
+          {success: true}
     delete: (role) ->
       redis
         .hdel "users:#{name}", "#{role}"
+        .then ->
+          {success: true}

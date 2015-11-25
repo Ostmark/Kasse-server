@@ -1,6 +1,7 @@
 users = require "../models/users"
 bluebird = require "bluebird"
 schema = require "../schemas/UserSchema"
+err = require "error-registry"
 
 module.exports =
   schema: schema
@@ -8,7 +9,9 @@ module.exports =
     users.make req.body.username,
       req.body.full_name,
       req.body.password
-    res.json {"success":true}
+      req.body.barcode
+    .then () ->
+      res.json success:true
 
   show: (req, res, next) ->
     users
@@ -16,7 +19,6 @@ module.exports =
       .then (user) ->
         if (user)
           res.json user
-          next()
         else
-          next {status: 404, error: "user not found"}
+          next err.get "notfound"
 

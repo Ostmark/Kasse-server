@@ -1,23 +1,18 @@
-drinks = require "../models/drinks.coffee"
+drinks = require "../models/drinks"
 t = (require "json.types").types
+schema = require "../schemas/DrinkSchema"
+err = require "error-registry"
+_ = require "lodash"
 
 module.exports =
-  schemas:
-    create:
-      name: t.String
-      size: t.String
-      cost: t.Number
 
   show: (req, res, next) ->
     drinks.get req.params.drink
       .then (result) ->
         if result
-          res.json result
-          next()
+          res.json _.extend result, success: true
         else
-          next status: 404, error:"drink doesn't exist"
-      .catch ->
-          next status: 405, error:"invalid"
+            next err.get "notfound"
 
   create: (req, res) ->
     drinks.make req.body.name,

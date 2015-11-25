@@ -1,24 +1,23 @@
 users = require "../models/users"
 bluebird = require "bluebird"
-t = (require "json.types").types
+schema = require "../schemas/RoleSchema"
+err = require "error-registry"
 
 module.exports =
-  schemas:
-    create:
-      authority:
-        name: t.String
-        password: t.String
-      role: t.String
-  create: (req, res) ->
-    users.auth_password req.body.authority.name, req.body.authority.password
+  schema: schema
+  create: (req, res, next) ->
+    users.auth req.body.authority, "roles"
     .then (auth) ->
-      if auth
+      if auth.success
         users
-          .roles name: req.params.user
-          .set req.body.role
+          .roles req.params.user
+          .set req.params.role
         res
           .json success:true
       else
-        res.json success:false
+        next err.get "auth"
 
   delete: (req, res) ->
+    users
+      .roles req.params.user
+      .delete req.params.role
