@@ -7,3 +7,4 @@ module.exports = ->
   @post '/deposit', "transaction#deposit"
   @post '/reverse', "transaction#reverse"
   @post '/transaction/pull', "transaction#pull"
+  @post '/barcode', "barcode#generate"

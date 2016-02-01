@@ -6,7 +6,7 @@ err = require "error-registry"
 module.exports =
   schema: schema
   create: (req, res) ->
-    users.make req.body.username,
+    users.make req.params.user,
       req.body.full_name,
       req.body.password
       req.body.barcode

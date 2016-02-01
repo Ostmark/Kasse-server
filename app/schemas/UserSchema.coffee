@@ -3,7 +3,6 @@ User = require "./user"
 
 module.exports =
     create:
-      username: t.String
       full_name: t.String
       password: t.String
       barcode:  t.String
