@@ -9,7 +9,7 @@
     "coffee-script": "^1.10.0",
     "colors": "^1.1.2",
     "debug": "^2.2.0",
-    "error-registry": "*",
+    "error-registry": "^0.1.5",
     "express": "4.x.x",
     "grunt": "*",
     "ioredis": "^1.9.0",

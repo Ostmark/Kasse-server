@@ -20,7 +20,7 @@ module.exports =
               else
                 next result.error
             .catch (err) ->
-              next status: 500, error: err.message.toString()
+              next status: 500, err: err.message.toString()
 
   deposit: (req, res, next) ->
       bluebird.all [

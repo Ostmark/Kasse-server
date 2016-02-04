@@ -112,4 +112,3 @@ module.exports =
         .map ([_, res]) -> JSON.parse res
       {success: true, n: res_list.length, result: res_list}
 
-

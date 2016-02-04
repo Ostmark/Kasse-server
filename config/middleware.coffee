@@ -12,7 +12,7 @@ module.exports =
       if err.status?
         res
           .status err.status
-          .json {success:false, error: err.toString()}
+          .json {success:false, error: err}
       else
         next err
     @use (err, req, res, next) ->
@@ -22,4 +22,4 @@ module.exports =
     @use (req, res) ->
         res
           .status 404
-          .json {success: false, error: "route doesn't exists"}
+          .json {success: false, error: "route doesn't exist"}
