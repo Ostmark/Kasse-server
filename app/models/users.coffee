@@ -28,11 +28,11 @@ auth_barcode = (barcode) ->
 auth_password = (user, password) ->
   redis
 # get the password hash, and try to get the role
-    .hmget "users:#{user}", "password", role ? "invalid_role"
-    .then (result) ->
+    .hmget "users:#{user}", ["password", role ? "invalid_role"]
+    .then ([hash, has_role]) ->
       if (bluebird.promisify bcrypt.compare) password, result[0]
         success: true
-        role: has_role?[0]?
+        role: has_role == "true"
         username: user
 
 

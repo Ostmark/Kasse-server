@@ -9,8 +9,8 @@ module.exports =
   schema: schema
   buy: (req, res, next) ->
     users.auth req.body.user
-      .then (res) ->
-        if not res.success
+      .then (result) ->
+        if not result.success
           next err.get "auth"
         else
           transactions.buy_drink res.username, req.body.drinks
@@ -19,8 +19,8 @@ module.exports =
                 res.json result
               else
                 next result.error
-            .catch (err) ->
-              next status: 500, err: err.message.toString()
+      .catch (err) ->
+        next status: 500, err: err.message.toString()
 
   deposit: (req, res, next) ->
       bluebird.all [
